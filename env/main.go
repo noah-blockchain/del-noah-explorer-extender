@@ -63,49 +63,49 @@ func New() *models.ExtenderEnvironment {
 	if *configFile != "" {
 		config := NewViperConfig(*configFile)
 		wsLink := `http://`
-		if GetBool(`wsServer.isSecure`) {
+		if config.GetBool(`wsServer.isSecure`) {
 			wsLink = `https://`
 		}
-		wsLink += GetString(`wsServer.link`)
-		if GetString(`wsServer.port`) != `` {
-			wsLink += `:` + GetString(`wsServer.port`)
+		wsLink += config.GetString(`wsServer.link`)
+		if config.GetString(`wsServer.port`) != `` {
+			wsLink += `:` + config.GetString(`wsServer.port`)
 		}
 		nodeApi := "http://"
-		if GetBool("noahApi.isSecure") {
+		if config.GetBool("noahApi.isSecure") {
 			nodeApi = "https://"
 		}
-		nodeApi += GetString("noahApi.link") + ":" + GetString("noahApi.port")
-		envData.Debug = GetBool("app.debug")
-		envData.DbName = GetString("database.name")
-		envData.DbUser = GetString("database.user")
-		envData.DbPassword = GetString("database.password")
-		envData.DbMinIdleConns = GetInt("database.minIdleConns")
-		envData.DbPoolSize = GetInt("database.poolSize")
+		nodeApi += config.GetString("noahApi.link") + ":" + config.GetString("noahApi.port")
+		envData.Debug = config.GetBool("app.debug")
+		envData.DbName = config.GetString("database.name")
+		envData.DbUser = config.GetString("database.user")
+		envData.DbPassword = config.GetString("database.password")
+		envData.DbMinIdleConns = config.GetInt("database.minIdleConns")
+		envData.DbPoolSize = config.GetInt("database.poolSize")
 		envData.NodeApi = nodeApi
-		envData.TxChunkSize = GetInt("app.txChunkSize")
-		envData.AddrChunkSize = GetInt("app.addrChunkSize")
-		envData.EventsChunkSize = GetInt("app.eventsChunkSize")
-		envData.StakeChunkSize = GetInt("app.stakeChunkSize")
-		envData.ApiHost = GetString("extenderApi.host")
-		envData.ApiPort = GetInt("extenderApi.port")
+		envData.TxChunkSize = config.GetInt("app.txChunkSize")
+		envData.AddrChunkSize = config.GetInt("app.addrChunkSize")
+		envData.EventsChunkSize = config.GetInt("app.eventsChunkSize")
+		envData.StakeChunkSize = config.GetInt("app.stakeChunkSize")
+		envData.ApiHost = config.GetString("extenderApi.host")
+		envData.ApiPort = config.GetInt("extenderApi.port")
 		envData.WsLink = wsLink
-		envData.WsKey = GetString(`wsServer.key`)
-		envData.AppName = GetString("name")
-		envData.WrkSaveTxsCount = GetInt("workers.saveTxs")
-		envData.WrkSaveTxsOutputCount = GetInt("workers.saveTxsOutput")
-		envData.WrkSaveInvTxsCount = GetInt("workers.saveInvalidTxs")
-		envData.WrkSaveRewardsCount = GetInt("workers.saveRewards")
-		envData.WrkSaveSlashesCount = GetInt("workers.saveSlashes")
-		envData.WrkSaveAddressesCount = GetInt("workers.saveAddresses")
-		envData.WrkSaveValidatorTxsCount = GetInt("workers.saveTxValidator")
-		envData.WrkUpdateBalanceCount = GetInt("workers.updateBalance")
-		envData.WrkGetBalancesFromNodeCount = GetInt("workers.balancesFromNode")
-		envData.RewardAggregateEveryBlocksCount = GetInt("app.rewardsAggregateBlocksCount")
-		envData.RewardAggregateTimeInterval = GetString("app.rewardsAggregateTimeInterval")
-		envData.BaseCoin = GetString("app.baseCoin")
-		envData.CoinsUpdateTime = GetInt("app.coinsUpdateTimeMinutes")
-		envData.WrkUpdateTxsIndexNumBlocks = GetInt("workers.updateTxsIndexNumBlocks")
-		envData.WrkUpdateTxsIndexTime = GetInt("workers.updateTxsIndexSleepSec")
+		envData.WsKey = config.GetString(`wsServer.key`)
+		envData.AppName = config.GetString("name")
+		envData.WrkSaveTxsCount = config.GetInt("workers.saveTxs")
+		envData.WrkSaveTxsOutputCount = config.GetInt("workers.saveTxsOutput")
+		envData.WrkSaveInvTxsCount = config.GetInt("workers.saveInvalidTxs")
+		envData.WrkSaveRewardsCount = config.GetInt("workers.saveRewards")
+		envData.WrkSaveSlashesCount = config.GetInt("workers.saveSlashes")
+		envData.WrkSaveAddressesCount = config.GetInt("workers.saveAddresses")
+		envData.WrkSaveValidatorTxsCount = config.GetInt("workers.saveTxValidator")
+		envData.WrkUpdateBalanceCount = config.GetInt("workers.updateBalance")
+		envData.WrkGetBalancesFromNodeCount = config.GetInt("workers.balancesFromNode")
+		envData.RewardAggregateEveryBlocksCount = config.GetInt("app.rewardsAggregateBlocksCount")
+		envData.RewardAggregateTimeInterval = config.GetString("app.rewardsAggregateTimeInterval")
+		envData.BaseCoin = config.GetString("app.baseCoin")
+		envData.CoinsUpdateTime = config.GetInt("app.coinsUpdateTimeMinutes")
+		envData.WrkUpdateTxsIndexNumBlocks = config.GetInt("workers.updateTxsIndexNumBlocks")
+		envData.WrkUpdateTxsIndexTime = config.GetInt("workers.updateTxsIndexSleepSec")
 	} else {
 		envData.AppName = *appName
 		envData.Debug = *debug

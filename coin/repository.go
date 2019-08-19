@@ -1,8 +1,8 @@
 package coin
 
 import (
-	"github.com/noah-blockchain/noah-explorer-tools/models"
 	"github.com/go-pg/pg"
+	"github.com/noah-blockchain/noah-explorer-tools/models"
 	"sync"
 )
 
@@ -15,7 +15,7 @@ type Repository struct {
 func NewRepository(db *pg.DB) *Repository {
 	return &Repository{
 		db:       db,
-			cache:    new(sync.Map), //TODO: добавить реализацию очистки
+		cache:    new(sync.Map), //TODO: добавить реализацию очистки
 		invCache: new(sync.Map), //TODO: добавить реализацию очистки
 	}
 }

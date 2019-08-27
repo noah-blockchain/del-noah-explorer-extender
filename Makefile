@@ -8,7 +8,7 @@ BRANCH = $(strip $(shell git rev-parse --abbrev-ref HEAD))
 CHANGES = $(shell git rev-list --count ${COMMIT})
 BUILDED ?= $(shell date -u '+%Y-%m-%dT%H:%M:%S')
 BUILD_FLAGS = "-X main.Version=$(VERSION) -X main.GitCommit=$(COMMIT) -X main.BuildedDate=$(BUILDED)"
-BUILD_TAGS?=noah-gate
+BUILD_TAGS?=noah-extender
 DOCKER_TAG = latest
 SERVER ?= gate.noah.network
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')

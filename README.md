@@ -16,8 +16,14 @@ _NOTE: This project in active development stage so feel free to send us question
 ## BUILD
 
 - dep ensure
+```
+go mod vendor
+```
 
-- replace Noah Node in vendor directory ```cd vendor/github.com/noah-blockchain && rm -rf noah-go-node && git clone https://github.com/noah-blockchain/noah-go-node.git```
+- replace Noah Node in vendor directory 
+```
+cd vendor/github.com/noah-blockchain && rm -rf noah-go-node && git clone https://github.com/noah-blockchain/noah-go-node.git
+```
 
 - make build
 

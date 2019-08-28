@@ -12,5 +12,4 @@ require (
 	github.com/prometheus/client_golang v1.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.4.0
-	github.com/valyala/fasthttp v1.4.0 // indirect
 )

@@ -1,4 +1,4 @@
-package noah_explorer_extender
+package main
 
 import (
 	"github.com/noah-blockchain/noah-explorer-extender/api"

@@ -1,9 +1,10 @@
 package address
 
 import (
-	"github.com/noah-blockchain/noah-explorer-tools/models"
-	"github.com/go-pg/pg"
 	"sync"
+
+	"github.com/go-pg/pg"
+	"github.com/noah-blockchain/noah-explorer-tools/models"
 )
 
 type Repository struct {

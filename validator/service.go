@@ -179,7 +179,7 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 					OwnerAddressID: ownerAddressID,
 					CoinID:         coinID,
 					Value:          stake.Value,
-					BipValue:       stake.BipValue,
+					NoahValue:      stake.Value,
 				})
 			}
 		}
@@ -292,7 +292,7 @@ func (s *Service) GetStakesFromCandidateResponse(response *responses.CandidateRe
 			CoinID:         coinID,
 			Value:          stake.Value,
 			ValidatorID:    validatorID,
-			BipValue:       stake.BipValue,
+			NoahValue:      stake.BipValue,
 			OwnerAddressID: ownerAddressID,
 		})
 	}

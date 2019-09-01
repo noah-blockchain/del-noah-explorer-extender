@@ -429,7 +429,7 @@ CREATE TABLE public.stakes
     validator_id     integer        NOT NULL,
     coin_id          integer        NOT NULL,
     value            numeric(70, 0) NOT NULL,
-    bip_value        numeric(70, 0) NOT NULL
+    noah_value        numeric(70, 0) NOT NULL
 );
 
 --
@@ -804,7 +804,7 @@ SELECT pg_catalog.setval('public.slashes_id_seq', 1, false);
 -- Data for Name: stakes; Type: TABLE DATA; Schema: public; Owner: noah
 --
 
-COPY public.stakes (owner_address_id, validator_id, coin_id, value, bip_value) FROM stdin;
+COPY public.stakes (owner_address_id, validator_id, coin_id, value, noah_value) FROM stdin;
 \.
 
 --
@@ -1512,4 +1512,4 @@ GRANT ALL ON SCHEMA public TO noah;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 INSERT INTO explorer.public.coins (symbol)
-VALUES ('BIP');
+VALUES ('NOAH');

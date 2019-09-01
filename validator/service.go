@@ -292,7 +292,7 @@ func (s *Service) GetStakesFromCandidateResponse(response *responses.CandidateRe
 			CoinID:         coinID,
 			Value:          stake.Value,
 			ValidatorID:    validatorID,
-			NoahValue:      stake.BipValue,
+			NoahValue:      stake.NoahValue,
 			OwnerAddressID: ownerAddressID,
 		})
 	}

@@ -371,13 +371,13 @@ CREATE TABLE public.rewards
 
 CREATE TABLE public.aggregated_rewards
 (
-  time_id       timestamp with time zone NOT NULL,
-  to_block_id   integer                  NOT NULL,
-  from_block_id integer                  NOT NULL,
-  address_id    bigint                   NOT NULL,
-  validator_id  integer                  NOT NULL,
-  role          public.rewards_role      NOT NULL,
-  amount        numeric(70, 0)           NOT NULL
+    time_id       timestamp with time zone NOT NULL,
+    to_block_id   integer                  NOT NULL,
+    from_block_id integer                  NOT NULL,
+    address_id    bigint                   NOT NULL,
+    validator_id  integer                  NOT NULL,
+    role          public.rewards_role      NOT NULL,
+    amount        numeric(70, 0)           NOT NULL
 );
 
 
@@ -429,7 +429,7 @@ CREATE TABLE public.stakes
     validator_id     integer        NOT NULL,
     coin_id          integer        NOT NULL,
     value            numeric(70, 0) NOT NULL,
-    bip_value        numeric(70, 0) NOT NULL
+    noah_value       numeric(70, 0) NOT NULL
 );
 
 --
@@ -438,11 +438,11 @@ CREATE TABLE public.stakes
 
 CREATE TABLE public.transaction_outputs
 (
-  id             bigint         NOT NULL,
-  transaction_id bigint         NOT NULL,
-  to_address_id  bigint         NOT NULL,
-  coin_id        integer        NOT NULL,
-  value          numeric(70, 0) NOT NULL
+    id             bigint         NOT NULL,
+    transaction_id bigint         NOT NULL,
+    to_address_id  bigint         NOT NULL,
+    coin_id        integer        NOT NULL,
+    value          numeric(70, 0) NOT NULL
 );
 
 
@@ -804,7 +804,7 @@ SELECT pg_catalog.setval('public.slashes_id_seq', 1, false);
 -- Data for Name: stakes; Type: TABLE DATA; Schema: public; Owner: noah
 --
 
-COPY public.stakes (owner_address_id, validator_id, coin_id, value, bip_value) FROM stdin;
+COPY public.stakes (owner_address_id, validator_id, coin_id, value, noah_value) FROM stdin;
 \.
 
 --
@@ -1112,7 +1112,7 @@ CREATE INDEX aggregated_rewards_time_id_index ON public.aggregated_rewards USING
 --
 
 CREATE UNIQUE INDEX aggregated_rewards_unique_index ON public.aggregated_rewards
-USING btree (time_id, address_id, validator_id, role);
+    USING btree (time_id, address_id, validator_id, role);
 
 
 
@@ -1331,7 +1331,7 @@ ALTER TABLE ONLY public.rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+    ADD CONSTRAINT aggregated_rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
 
 
 --
@@ -1339,7 +1339,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_from_blocks_id_fk FOREIGN KEY (from_block_id) REFERENCES public.blocks (id);
+    ADD CONSTRAINT aggregated_rewards_from_blocks_id_fk FOREIGN KEY (from_block_id) REFERENCES public.blocks (id);
 
 
 --
@@ -1347,7 +1347,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_to_blocks_id_fk FOREIGN KEY (to_block_id) REFERENCES public.blocks (id);
+    ADD CONSTRAINT aggregated_rewards_to_blocks_id_fk FOREIGN KEY (to_block_id) REFERENCES public.blocks (id);
 
 
 --
@@ -1355,7 +1355,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+    ADD CONSTRAINT aggregated_rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
 
 
 --
@@ -1512,4 +1512,4 @@ GRANT ALL ON SCHEMA public TO noah;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 INSERT INTO explorer.public.coins (symbol)
-VALUES ('BIP');
+VALUES ('NOAH');

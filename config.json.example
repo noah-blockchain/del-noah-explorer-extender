@@ -2,7 +2,7 @@
   "name": "Noah Extender",
   "app":{
     "debug": ME_DEBUG,
-    "baseCoin": "ME_BASE_COIN",
+    "baseCoin": "NOAH",
     "coinsUpdateTimeMinutes" : ME_COINS_UPDATE_TIME,
     "txChunkSize": ME_TX_CHUNK_SIZE,
     "addrChunkSize": ME_ADDR_CHUNK_SIZE,
@@ -13,7 +13,7 @@
   },
   "workers": {
     "saveTxs": ME_WRK_SAVE_TXS,
-    "saveTxsOutput": ME_WRK_SAVE_OUTPUT_TXS,
+    "saveTxsOut put": ME_WRK_SAVE_OUTPUT_TXS,
     "saveInvalidTxs": ME_WRK_SAVE_INVALID_TXS,
     "saveRewards": ME_WRK_SAVE_REWARDS,
     "saveSlashes": ME_WRK_SAVE_SLASHES,

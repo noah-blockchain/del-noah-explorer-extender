@@ -1,7 +1,7 @@
 create schema if not exists public;
 
+DROP TYPE IF EXISTS public.rewards_role;
 create type public.rewards_role as enum ('Validator', 'Delegator', 'DAO', 'Developers');
-
 alter type public.rewards_role owner to noah;
 
 create table if not exists public.addresses

@@ -1,7 +1,6 @@
 package transaction
 
 import (
-
 	"github.com/go-pg/pg"
 	"github.com/noah-blockchain/noah-explorer-tools/models"
 )

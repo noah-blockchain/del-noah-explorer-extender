@@ -1,6 +1,12 @@
 package core
 
 import (
+	"math"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/go-pg/pg"
 	"github.com/noah-blockchain/noah-explorer-extender/address"
 	"github.com/noah-blockchain/noah-explorer-extender/balance"
 	"github.com/noah-blockchain/noah-explorer-extender/block"
@@ -13,12 +19,7 @@ import (
 	"github.com/noah-blockchain/noah-explorer-tools/models"
 	"github.com/noah-blockchain/noah-node-go-api"
 	"github.com/noah-blockchain/noah-node-go-api/responses"
-	"github.com/go-pg/pg"
 	"github.com/sirupsen/logrus"
-	"math"
-	"os"
-	"strconv"
-	"time"
 )
 
 const ChasingModDiff = 2
@@ -83,7 +84,6 @@ func NewExtender(env *models.ExtenderEnvironment) *Extender {
 	if env.Debug {
 		db.AddQueryHook(dbLogger{logger: contextLogger})
 	}
-
 	//api
 	nodeApi := noah_node_go_api.New(env.NodeApi)
 

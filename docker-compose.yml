@@ -1,8 +1,11 @@
 version: '3.6'
 
+volumes:
+  app-db-data:
+
 services:
   db:
-    image: postgres:alpine
+    image: postgres:11.2
     restart: always
     ports:
       - 5432:5432
@@ -11,7 +14,8 @@ services:
       POSTGRES_USER: noah
       POSTGRES_PASSWORD: password
     volumes:
-      - ./tmp/postgresql:/var/lib/postgresql/data
+      - app-db-data:/var/lib/postgresql/data
+
   centrifugo:
     image: centrifugo/centrifugo
     volumes:

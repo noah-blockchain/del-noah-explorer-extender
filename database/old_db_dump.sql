@@ -53,7 +53,7 @@ SET default_with_oids = false;
 CREATE TABLE public.addresses
 (
     id                  bigint                NOT NULL,
-    address             character varying(40) NOT NULL,
+    address             character varying(64) NOT NULL,
     updated_at          timestamp with time zone,
     updated_at_block_id bigint
 );
@@ -64,7 +64,7 @@ CREATE TABLE public.addresses
 -- Name: COLUMN addresses.address; Type: COMMENT; Schema: public; Owner: noah
 --
 
-COMMENT ON COLUMN public.addresses.address IS 'Address hex string without prefix(Mx****)';
+COMMENT ON COLUMN public.addresses.address IS 'Address hex string without prefix(NOAHx****)';
 
 
 --
@@ -185,7 +185,7 @@ COMMENT ON COLUMN public.blocks.total_txs IS 'Total count of txs in blockchain';
 -- Name: COLUMN blocks.proposer_validator_id; Type: COMMENT; Schema: public; Owner: noah
 --
 
-COMMENT ON COLUMN public.blocks.proposer_validator_id IS 'Proposer public key (Mp***)';
+COMMENT ON COLUMN public.blocks.proposer_validator_id IS 'Proposer public key (Np***)';
 
 
 --
@@ -757,7 +757,6 @@ COPY public.coins (id, creation_address_id, creation_transaction_id, crr, update
 
 --
 -- Name: coins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
-noah
 
 SELECT pg_catalog.setval('public.coins_id_seq', 1, false);
 

@@ -2,9 +2,10 @@ package events
 
 import (
 	"errors"
-	"github.com/noah-blockchain/noah-explorer-tools/models"
-	"github.com/go-pg/pg"
 	"strings"
+
+	"github.com/go-pg/pg"
+	"github.com/noah-blockchain/noah-explorer-tools/models"
 )
 
 type Repository struct {

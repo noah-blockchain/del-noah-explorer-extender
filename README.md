@@ -15,10 +15,7 @@ _NOTE: This project in active development stage so feel free to send us question
 
 ## BUILD
 
-- dep ensure
-```
-go mod vendor
-```
+- make create_vendor
 
 - replace Noah Node in vendor directory 
 ```
@@ -32,7 +29,12 @@ cd vendor/github.com/noah-blockchain && rm -rf noah-go-node && git clone https:/
 If you run Extender for the first time yoг need to run  [Explorer Genesis Uploader](https://github.com/noah-blockchain/explorer-genesis-uploader)
 to fill data from genesis file (you can use the same config file for both services)
 
-./extender -config=/etc/noah/config.json
+./extender -config=/etc/noah/config.json (This place is not important because we using ENV configuration)
+
+### Important Environments
+
+Example for all important environments you can see in file .env.example.
+Its config for connect to PostgresSQL, Node API URL, Extender URL and service mode (debug, prod).
 
 ### Config file
 
@@ -42,24 +44,24 @@ Example:
 
 ```
 {
-  "name": "Noah Extender",
+  "name": "Noah Explorer Genesis Uploader",
   "app": {
     "debug": true,
-    "baseCoin": "MNT",
+    "baseCoin": "NOAH",
     "txChunkSize": 200,
     "addrChunkSize": 30,
     "eventsChunkSize": 200
   },
   "workers": {
-    "saveTxs": 10,
-    "saveTxsOutput": 5,
-    "saveInvalidTxs": 2,
-    "saveRewards": 3,
-    "saveSlashes": 3,
-    "saveAddresses": 3,
-    "saveTxValidator": 2,
-    "updateBalance": 2,
-    "balancesFromNode": 3
+    "saveTxs": ME_WRK_SAVE_TXS,
+    "saveTxsOutput": ME_WRK_SAVE_OUTPUT_TXS,
+    "saveInvalidTxs": ME_WRK_SAVE_INVALID_TXS,
+    "saveRewards": ME_WRK_SAVE_REWARDS,
+    "saveSlashes": ME_WRK_SAVE_SLASHES,
+    "saveAddresses": ME_WRK_SAVE_ADDR,
+    "saveTxValidator": ME_WRK_SAVE_TX_VAL,
+    "updateBalance": ME_WRK_UPD_BALANCE,
+    "balancesFromNode": ME_WRK_BALANCE_NODE
   },
   "database": {
     "host": "localhost",
@@ -75,14 +77,14 @@ Example:
     "port": 8841
   },
   "extenderApi": {
-    "host": "",
-    "port": 8800
+    "host": "localhost",
+    "port": "15000"
   },
-  "wsServer": {
-    "isSecure": true,
-    "link": "localhost",
-    "port": "",
-    "key": "secret-key"
+  "wsServer":{
+    "isSecure" : false,
+    "link" : "ME_WS_LINK",
+    "port" : "ME_WS_PORT",
+    "key"  : "ME_WS_KEY"
   }
 }
 ```

@@ -53,7 +53,7 @@ SET default_with_oids = false;
 CREATE TABLE public.addresses
 (
     id                  bigint                NOT NULL,
-    address             character varying(40) NOT NULL,
+    address             character varying(64) NOT NULL,
     updated_at          timestamp with time zone,
     updated_at_block_id bigint
 );
@@ -64,7 +64,7 @@ CREATE TABLE public.addresses
 -- Name: COLUMN addresses.address; Type: COMMENT; Schema: public; Owner: noah
 --
 
-COMMENT ON COLUMN public.addresses.address IS 'Address hex string without prefix(Mx****)';
+COMMENT ON COLUMN public.addresses.address IS 'Address hex string without prefix(NOAHx****)';
 
 
 --
@@ -185,7 +185,7 @@ COMMENT ON COLUMN public.blocks.total_txs IS 'Total count of txs in blockchain';
 -- Name: COLUMN blocks.proposer_validator_id; Type: COMMENT; Schema: public; Owner: noah
 --
 
-COMMENT ON COLUMN public.blocks.proposer_validator_id IS 'Proposer public key (Mp***)';
+COMMENT ON COLUMN public.blocks.proposer_validator_id IS 'Proposer public key (Np***)';
 
 
 --
@@ -371,13 +371,13 @@ CREATE TABLE public.rewards
 
 CREATE TABLE public.aggregated_rewards
 (
-  time_id       timestamp with time zone NOT NULL,
-  to_block_id   integer                  NOT NULL,
-  from_block_id integer                  NOT NULL,
-  address_id    bigint                   NOT NULL,
-  validator_id  integer                  NOT NULL,
-  role          public.rewards_role      NOT NULL,
-  amount        numeric(70, 0)           NOT NULL
+    time_id       timestamp with time zone NOT NULL,
+    to_block_id   integer                  NOT NULL,
+    from_block_id integer                  NOT NULL,
+    address_id    bigint                   NOT NULL,
+    validator_id  integer                  NOT NULL,
+    role          public.rewards_role      NOT NULL,
+    amount        numeric(70, 0)           NOT NULL
 );
 
 
@@ -429,7 +429,7 @@ CREATE TABLE public.stakes
     validator_id     integer        NOT NULL,
     coin_id          integer        NOT NULL,
     value            numeric(70, 0) NOT NULL,
-    noah_value        numeric(70, 0) NOT NULL
+    noah_value       numeric(70, 0) NOT NULL
 );
 
 --
@@ -438,11 +438,11 @@ CREATE TABLE public.stakes
 
 CREATE TABLE public.transaction_outputs
 (
-  id             bigint         NOT NULL,
-  transaction_id bigint         NOT NULL,
-  to_address_id  bigint         NOT NULL,
-  coin_id        integer        NOT NULL,
-  value          numeric(70, 0) NOT NULL
+    id             bigint         NOT NULL,
+    transaction_id bigint         NOT NULL,
+    to_address_id  bigint         NOT NULL,
+    coin_id        integer        NOT NULL,
+    value          numeric(70, 0) NOT NULL
 );
 
 
@@ -757,7 +757,6 @@ COPY public.coins (id, creation_address_id, creation_transaction_id, crr, update
 
 --
 -- Name: coins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
-noah
 
 SELECT pg_catalog.setval('public.coins_id_seq', 1, false);
 
@@ -1112,7 +1111,7 @@ CREATE INDEX aggregated_rewards_time_id_index ON public.aggregated_rewards USING
 --
 
 CREATE UNIQUE INDEX aggregated_rewards_unique_index ON public.aggregated_rewards
-USING btree (time_id, address_id, validator_id, role);
+    USING btree (time_id, address_id, validator_id, role);
 
 
 
@@ -1331,7 +1330,7 @@ ALTER TABLE ONLY public.rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+    ADD CONSTRAINT aggregated_rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
 
 
 --
@@ -1339,7 +1338,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_from_blocks_id_fk FOREIGN KEY (from_block_id) REFERENCES public.blocks (id);
+    ADD CONSTRAINT aggregated_rewards_from_blocks_id_fk FOREIGN KEY (from_block_id) REFERENCES public.blocks (id);
 
 
 --
@@ -1347,7 +1346,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_to_blocks_id_fk FOREIGN KEY (to_block_id) REFERENCES public.blocks (id);
+    ADD CONSTRAINT aggregated_rewards_to_blocks_id_fk FOREIGN KEY (to_block_id) REFERENCES public.blocks (id);
 
 
 --
@@ -1355,7 +1354,7 @@ ALTER TABLE ONLY public.aggregated_rewards
 --
 
 ALTER TABLE ONLY public.aggregated_rewards
-  ADD CONSTRAINT aggregated_rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+    ADD CONSTRAINT aggregated_rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
 
 
 --

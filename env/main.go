@@ -2,27 +2,22 @@ package env
 
 import (
 	"flag"
-	"github.com/noah-blockchain/noah-explorer-tools/models"
 	"os"
+
+	"github.com/noah-blockchain/noah-explorer-tools/models"
 )
 
 func New() *models.ExtenderEnvironment {
 	appName := flag.String("app_name", "Noah Extender", "App name")
-	baseCoin := flag.String("base_coin", "MNT", "Base coin symbol")
+	baseCoin := flag.String("base_coin", "NOAH", "Base coin symbol")
 	coinsUpdateTime := flag.Int("coins_upd_time", 3600, "Coins update time in minutes")
-	debug := flag.Bool("debug", false, "Debug mode")
-	dbName := flag.String("db_name", "", "DB name")
-	dbUser := flag.String("db_user", "", "DB user")
-	dbPassword := flag.String("db_password", "", "DB password")
+	debug := flag.Bool("debug", true, "Debug mode")
 	dbMinIdleConns := flag.Int("db_min_idle_conns", 10, "DB min idle connections")
 	dbPoolSize := flag.Int("db_pool_size", 20, "DB pool size")
-	nodeApi := flag.String("node_api", "", "DB password")
 	txChunkSize := flag.Int("tx_chunk_size", 100, "Transactions chunk size")
 	eventsChunkSize := flag.Int("event_chunk_size", 100, "Events chunk size")
 	stakeChunkSize := flag.Int("stake_chunk_size", 100, "Stake chunk size")
 	configFile := flag.String("config", "", "Env file")
-	apiHost := flag.String("api_host", "", "API host")
-	apiPort := flag.Int("api_port", 8000, "API port")
 	wsLink := flag.String("ws_link", "", "WebSocket server link")
 	wsKey := flag.String("ws_key", "", "WebSocket API key")
 	wrkSaveTxsCount := flag.Int("wrk_save_txs_count", 3, "Count of workers that save transactions")
@@ -43,22 +38,13 @@ func New() *models.ExtenderEnvironment {
 
 	envData := new(models.ExtenderEnvironment)
 
-	if envData.DbUser == "" {
-		dbUser := os.Getenv("EXPLORER_DB_USER")
-		envData.DbUser = dbUser
-	}
-	if envData.DbName == "" {
-		dbName := os.Getenv("EXPLORER_DB_NAME")
-		envData.DbName = dbName
-	}
-	if envData.DbPassword == "" {
-		dbPassword := os.Getenv("EXPLORER_DB_PASSWORD")
-		envData.DbPassword = dbPassword
-	}
-	if envData.NodeApi == "" {
-		nodeApi := os.Getenv("NOAH_NODE_API")
-		envData.NodeApi = nodeApi
-	}
+	envData.DbUser = os.Getenv("DB_USER")
+	envData.DbName = os.Getenv("DB_NAME")
+	envData.DbPassword = os.Getenv("DB_PASSWORD")
+	envData.NodeApi = os.Getenv("NOAH_API_NODE")
+	envData.ApiHost = os.Getenv("EXTENDER_API_HOST")
+	envData.ApiPort = getEnvAsInt("EXTENDER_API_PORT", 8000)
+	envData.Debug = getEnvAsBool("IS_DEV", true)
 
 	if *configFile != "" {
 		config := NewViperConfig(*configFile)
@@ -70,24 +56,13 @@ func New() *models.ExtenderEnvironment {
 		if config.GetString(`wsServer.port`) != `` {
 			wsLink += `:` + config.GetString(`wsServer.port`)
 		}
-		nodeApi := "http://"
-		if config.GetBool("noahApi.isSecure") {
-			nodeApi = "https://"
-		}
-		nodeApi += config.GetString("noahApi.link") + ":" + config.GetString("noahApi.port")
 		envData.Debug = config.GetBool("app.debug")
-		envData.DbName = config.GetString("database.name")
-		envData.DbUser = config.GetString("database.user")
-		envData.DbPassword = config.GetString("database.password")
 		envData.DbMinIdleConns = config.GetInt("database.minIdleConns")
 		envData.DbPoolSize = config.GetInt("database.poolSize")
-		envData.NodeApi = nodeApi
 		envData.TxChunkSize = config.GetInt("app.txChunkSize")
 		envData.AddrChunkSize = config.GetInt("app.addrChunkSize")
 		envData.EventsChunkSize = config.GetInt("app.eventsChunkSize")
 		envData.StakeChunkSize = config.GetInt("app.stakeChunkSize")
-		envData.ApiHost = config.GetString("extenderApi.host")
-		envData.ApiPort = config.GetInt("extenderApi.port")
 		envData.WsLink = wsLink
 		envData.WsKey = config.GetString(`wsServer.key`)
 		envData.AppName = config.GetString("name")
@@ -109,17 +84,11 @@ func New() *models.ExtenderEnvironment {
 	} else {
 		envData.AppName = *appName
 		envData.Debug = *debug
-		envData.DbName = *dbName
-		envData.DbUser = *dbUser
-		envData.DbPassword = *dbPassword
 		envData.DbMinIdleConns = *dbMinIdleConns
 		envData.DbPoolSize = *dbPoolSize
-		envData.NodeApi = *nodeApi
 		envData.TxChunkSize = *txChunkSize
 		envData.EventsChunkSize = *eventsChunkSize
 		envData.StakeChunkSize = *stakeChunkSize
-		envData.ApiHost = *apiHost
-		envData.ApiPort = *apiPort
 		envData.WsLink = *wsLink
 		envData.WsKey = *wsKey
 		envData.WrkSaveTxsCount = *wrkSaveTxsCount

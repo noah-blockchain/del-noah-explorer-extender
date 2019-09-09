@@ -12,7 +12,7 @@ WORKDIR ${APP_PATH}
 
 RUN make create_vendor && \
     make build && \
-    ls -la ./build/
+    ls -la ./builds/
 
 EXPOSE 9000
 CMD ["/usr/local/bin/extenderstart.sh"]

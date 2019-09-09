@@ -9,7 +9,7 @@ require (
 	github.com/go-pg/migrations/v7 v7.1.3
 	github.com/go-pg/pg v8.0.5+incompatible
 	github.com/go-pg/pg/v9 v9.0.0-beta.7
-	github.com/noah-blockchain/api v0.1.1
+	github.com/noah-blockchain/noah-explorer-api v0.1.1
 	github.com/noah-blockchain/noah-explorer-tools v0.1.1
 	github.com/noah-blockchain/noah-go-node v0.1.2
 	github.com/noah-blockchain/noah-node-go-api v0.1.1

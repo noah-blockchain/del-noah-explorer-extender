@@ -17,17 +17,14 @@ _NOTE: This project in active development stage so feel free to send us question
 
 - make create_vendor
 
-- replace Noah Node in vendor directory 
-```
-cd vendor/github.com/noah-blockchain && rm -rf noah-go-node && git clone https://github.com/noah-blockchain/noah-go-node.git
-```
-
 - make build
 
 ## RUN
 
 If you run Extender for the first time yoг need to run  [Explorer Genesis Uploader](https://github.com/noah-blockchain/explorer-genesis-uploader)
 to fill data from genesis file (you can use the same config file for both services)
+
+Start e
 
 ./extender -config=/etc/noah/config.json (This place is not important because we using ENV configuration)
 

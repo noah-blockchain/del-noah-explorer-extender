@@ -41,6 +41,8 @@ func New() *models.ExtenderEnvironment {
 	envData.DbUser = os.Getenv("DB_USER")
 	envData.DbName = os.Getenv("DB_NAME")
 	envData.DbPassword = os.Getenv("DB_PASSWORD")
+	envData.DbHost = os.Getenv("DB_HOST")
+	envData.DbPort = getEnvAsInt("DB_PORT", 5432)
 	envData.NodeApi = os.Getenv("NOAH_API_NODE")
 	envData.ApiHost = os.Getenv("EXTENDER_API_HOST")
 	envData.ApiPort = getEnvAsInt("EXTENDER_API_PORT", 8000)

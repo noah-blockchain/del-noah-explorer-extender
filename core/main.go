@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -75,6 +76,7 @@ func NewExtender(env *models.ExtenderEnvironment) *Extender {
 
 	//Init DB
 	db := pg.Connect(&pg.Options{
+		Addr:            fmt.Sprintf("%s:%d", env.DbHost, env.DbPort),
 		User:            env.DbUser,
 		Password:        env.DbPassword,
 		Database:        env.DbName,

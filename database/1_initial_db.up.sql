@@ -266,7 +266,7 @@ create table if not exists public.validators
     status              integer,
     commission          integer,
     total_stake         numeric(70),
-    public_key          varchar(64)                            not null,
+    public_key          varchar(70)                            not null,
     update_at           timestamp with time zone default now() not null
 );
 

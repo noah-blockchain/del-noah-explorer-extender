@@ -81,6 +81,9 @@ func NewExtender(env *models.ExtenderEnvironment) *Extender {
 		Password:        env.DbPassword,
 		Database:        env.DbName,
 		ApplicationName: env.AppName,
+		MinIdleConns:    env.DbMinIdleConns,
+		PoolSize:        env.DbPoolSize,
+		MaxRetries:      10,
 	})
 
 	if env.Debug {

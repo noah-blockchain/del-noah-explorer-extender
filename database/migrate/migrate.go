@@ -1,19 +1,24 @@
 package migrate
 
 import (
-	"log"
-	"os"
-
+	"fmt"
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
+	"github.com/noah-blockchain/noah-explorer-tools/models"
+	"log"
 )
 
 // Migrate runs go-pg migrations
-func Migrate() {
+func Migrate(env *models.ExtenderEnvironment) {
 	db := pg.Connect(&pg.Options{
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Database: os.Getenv("DB_NAME"),
+		Addr:            fmt.Sprintf("%s:%d", env.DbHost, env.DbPort),
+		User:            env.DbUser,
+		Password:        env.DbPassword,
+		Database:        env.DbName,
+		ApplicationName: env.AppName,
+		MinIdleConns:    env.DbMinIdleConns,
+		PoolSize:        env.DbPoolSize,
+		MaxRetries:      10,
 	})
 	defer db.Close()
 

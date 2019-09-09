@@ -8,9 +8,10 @@ import (
 )
 
 func main() {
-	migrate.Migrate()
-
 	envData := env.New()
+
+	migrate.Migrate(envData)
+
 	extenderApi := api.New(envData.ApiHost, envData.ApiPort)
 	go extenderApi.Run()
 	ext := core.NewExtender(envData)

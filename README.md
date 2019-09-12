@@ -29,6 +29,7 @@ to fill data from genesis file (you can use the same config file for both servic
 
 ./extender
 
+_We recommend use our official docker image._
 ### Important Environments
 Example for all important environments you can see in file .env.example.
 Its config for connect to PostgresSQL, Node API URL, Extender URL and service mode (debug, prod).

@@ -93,7 +93,7 @@ func (s *Service) GetBalancesFromNodeWorker(jobs <-chan models.BlockAddresses, r
 	for blockAddresses := range jobs {
 		addresses := make([]string, len(blockAddresses.Addresses))
 		for i, adr := range blockAddresses.Addresses {
-			addresses[i] = `"Mx` + adr + `"`
+			addresses[i] = `"NOAHx` + adr + `"`
 		}
 		response, err := s.nodeApi.GetAddresses(addresses, blockAddresses.Height)
 		if err != nil {

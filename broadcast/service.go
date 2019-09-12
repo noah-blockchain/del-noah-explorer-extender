@@ -3,6 +3,7 @@ package broadcast
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/centrifugal/gocent"
@@ -27,7 +28,7 @@ type Service struct {
 func NewService(env *models.ExtenderEnvironment, addressRepository *address.Repository, coinRepository *coin.Repository,
 	logger *logrus.Entry) *Service {
 	wsClient := gocent.New(gocent.Config{
-		Addr: env.WsLink,
+		Addr: fmt.Sprintf("%s:%d", env.WsHost, env.WsPort),
 		Key:  env.WsKey,
 	})
 
@@ -84,7 +85,7 @@ func (s *Service) PublishBalances(balances []*models.Balance) {
 	for addressId, items := range mapBalances {
 		adr, err := s.addressRepository.FindById(addressId)
 		helpers.HandleError(err)
-		channel := "Mx" + adr
+		channel := "NOAHx" + adr
 		msg, err := json.Marshal(items)
 		if err != nil {
 			log.Printf(`Error parse json: %s`, err)

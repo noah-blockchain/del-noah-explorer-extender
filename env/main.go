@@ -11,7 +11,6 @@ func New() *models.ExtenderEnvironment {
 	appName := flag.String("app_name", "Noah Extender", "App name")
 	baseCoin := flag.String("base_coin", "NOAH", "Base coin symbol")
 	coinsUpdateTime := flag.Int("coins_upd_time", 3600, "Coins update time in minutes")
-	debug := flag.Bool("debug", true, "Debug mode")
 	txChunkSize := flag.Int("tx_chunk_size", 100, "Transactions chunk size")
 	eventsChunkSize := flag.Int("event_chunk_size", 100, "Events chunk size")
 	stakeChunkSize := flag.Int("stake_chunk_size", 100, "Stake chunk size")
@@ -47,7 +46,6 @@ func New() *models.ExtenderEnvironment {
 	envData.WsKey = os.Getenv("WS_API_KEY")
 
 	envData.AppName = *appName
-	envData.Debug = *debug
 	envData.DbMinIdleConns = 10
 	envData.DbPoolSize = 20
 	envData.TxChunkSize = *txChunkSize

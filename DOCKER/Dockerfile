@@ -6,14 +6,13 @@ FROM golang:1.12-buster as builder
 ENV APP_PATH /home/noah-extender
 
 COPY . ${APP_PATH}
-COPY ./DOCKER/cmd.sh /usr/local/bin/extenderstart.sh
 
 WORKDIR ${APP_PATH}
 
 RUN make create_vendor && \
     make build && \
-    ls -la ./builds/
+    cp ./builds/extender /usr/local/bin/extender
 
 EXPOSE 9000
-CMD ["/usr/local/bin/extenderstart.sh"]
+CMD ["extender"]
 STOPSIGNAL SIGTERM

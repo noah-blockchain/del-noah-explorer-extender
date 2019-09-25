@@ -11,9 +11,8 @@ require (
 	github.com/go-pg/pg/v9 v9.0.0-beta.7
 	github.com/noah-blockchain/noah-explorer-api v0.1.1
 	github.com/noah-blockchain/noah-explorer-tools v0.1.1
-	github.com/noah-blockchain/noah-go-node v0.1.2
+	github.com/noah-blockchain/noah-go-node v0.2.0
 	github.com/noah-blockchain/noah-node-go-api v0.1.1
 	github.com/prometheus/client_golang v1.1.0
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/viper v1.4.0
 )

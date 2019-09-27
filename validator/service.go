@@ -11,6 +11,7 @@ import (
 	"github.com/noah-blockchain/noah-explorer-tools/models"
 	"github.com/noah-blockchain/noah-node-go-api"
 	"github.com/noah-blockchain/noah-node-go-api/responses"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,7 +52,13 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 	for height := range jobs {
 		resp, err := s.nodeApi.GetCandidates(height, false)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
+			continue
+		}
+
+		if resp.Error != nil {
+			s.logger.Errorf("UpdateValidatorsWorker error: message=%s and data=%s", resp.Error.Message, resp.Error.Data) // todo
+			continue
 		}
 
 		if len(resp.Result) > 0 {
@@ -69,12 +76,12 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 
 			err = s.repository.SaveAllIfNotExist(validators)
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 			}
 
 			err = s.addressRepository.SaveFromMapIfNotExists(addressesMap)
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 			}
 
 			for i, validator := range resp.Result {
@@ -84,22 +91,22 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 
 				id, err := s.repository.FindIdByPkOrCreate(helpers.RemovePrefix(validator.PubKey))
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				commission, err := strconv.ParseUint(validator.Commission, 10, 64)
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(validator.RewardAddress))
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(validator.OwnerAddress))
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				validators[i] = &models.Validator{
@@ -114,11 +121,11 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 			}
 			err = s.repository.ResetAllStatuses()
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 			}
 			err = s.repository.UpdateAll(validators)
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 			}
 		}
 	}
@@ -128,8 +135,15 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 	for height := range jobs {
 		resp, err := s.nodeApi.GetCandidates(height, true)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
+			continue
 		}
+
+		if resp.Error != nil {
+			s.logger.Errorf("UpdateStakesWorker error: message=%s and data=%s", resp.Error.Message, resp.Error.Data) // todo
+			continue
+		}
+
 		var (
 			stakes       []*models.Stake
 			validatorIds = make([]uint64, len(resp.Result))
@@ -149,30 +163,30 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 
 		err = s.repository.SaveAllIfNotExist(validators)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
 		}
 
 		err = s.addressRepository.SaveFromMapIfNotExists(addressesMap)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
 		}
 
 		for i, vlr := range resp.Result {
 			id, err := s.repository.FindIdByPkOrCreate(helpers.RemovePrefix(vlr.PubKey))
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 				continue
 			}
 			validatorIds[i] = id
 			for _, stake := range vlr.Stakes {
 				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(stake.Owner))
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				coinID, err := s.coinRepository.FindIdBySymbol(stake.Coin)
 				if err != nil {
-					s.logger.Error(err)
+					s.logger.Error(errors.WithStack(err))
 					continue
 				}
 				stakes = append(stakes, &models.Stake{
@@ -194,7 +208,7 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 			}
 			err = s.repository.SaveAllStakes(stakes[start:end])
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Error(errors.WithStack(err))
 				panic(err)
 			}
 		}
@@ -205,7 +219,7 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 		}
 		err = s.repository.DeleteStakesNotInListIds(stakesId)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
 		}
 	}
 }
@@ -218,7 +232,7 @@ func (s *Service) HandleBlockResponse(response *responses.BlockResponse) ([]*mod
 	}
 	err := s.repository.SaveAllIfNotExist(validators)
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, err
 	}
 	return validators, err
@@ -230,32 +244,32 @@ func (s *Service) HandleCandidateResponse(response *responses.CandidateResponse)
 	validator.TotalStake = &response.Result.TotalStake
 	commission, err := strconv.ParseUint(response.Result.Commission, 10, 64)
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.Commission = &commission
 	createdAtBlockID, err := strconv.ParseUint(response.Result.CreatedAtBlock, 10, 64)
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.CreatedAtBlockID = &createdAtBlockID
 	ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(response.Result.OwnerAddress))
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.OwnerAddressID = &ownerAddressID
 	rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(response.Result.RewardAddress))
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.RewardAddressID = &rewardAddressID
 	validator.PublicKey = helpers.RemovePrefix(response.Result.PubKey)
 	validatorID, err := s.repository.FindIdByPk(validator.PublicKey)
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.ID = validatorID
@@ -264,7 +278,7 @@ func (s *Service) HandleCandidateResponse(response *responses.CandidateResponse)
 
 	stakes, err := s.GetStakesFromCandidateResponse(response)
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 
@@ -275,18 +289,18 @@ func (s *Service) GetStakesFromCandidateResponse(response *responses.CandidateRe
 	var stakes []*models.Stake
 	validatorID, err := s.repository.FindIdByPk(helpers.RemovePrefix(response.Result.PubKey))
 	if err != nil {
-		s.logger.Error(err)
+		s.logger.Error(errors.WithStack(err))
 		return nil, err
 	}
 	for _, stake := range response.Result.Stakes {
 		ownerAddressID, err := s.addressRepository.FindId(helpers.RemovePrefix(stake.Owner))
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
 			return nil, err
 		}
 		coinID, err := s.coinRepository.FindIdBySymbol(stake.Coin)
 		if err != nil {
-			s.logger.Error(err)
+			s.logger.Error(errors.WithStack(err))
 			return nil, err
 		}
 		stakes = append(stakes, &models.Stake{

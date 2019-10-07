@@ -52,12 +52,13 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 	for height := range jobs {
 		resp, err := s.nodeApi.GetCandidates(height, false)
 		if err != nil {
+			s.logger.Println("height=%d", height)
 			s.logger.Error(errors.WithStack(err))
 			continue
 		}
 
 		if resp.Error != nil {
-			s.logger.Errorf("UpdateValidatorsWorker error: message=%s and data=%s", resp.Error.Message, resp.Error.Data) // todo
+			s.logger.Errorf("UpdateValidatorsWorker error: message=%s and data=%s height=%d", resp.Error.Message, resp.Error.Data, height) // todo
 			continue
 		}
 

@@ -71,8 +71,8 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 			// Collect all PubKey's and addresses for save it before
 			for i, vlr := range resp.Result {
 				validators[i] = &models.Validator{PublicKey: helpers.RemovePrefix(vlr.PubKey)}
-				addressesMap[helpers.RemovePrefix(vlr.RewardAddress)] = struct{}{}
-				addressesMap[helpers.RemovePrefix(vlr.OwnerAddress)] = struct{}{}
+				addressesMap[helpers.RemovePrefixFromAddress(vlr.RewardAddress)] = struct{}{}
+				addressesMap[helpers.RemovePrefixFromAddress(vlr.OwnerAddress)] = struct{}{}
 			}
 
 			err = s.repository.SaveAllIfNotExist(validators)
@@ -100,12 +100,12 @@ func (s *Service) UpdateValidatorsWorker(jobs <-chan uint64) {
 					s.logger.Error(errors.WithStack(err))
 					continue
 				}
-				rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(validator.RewardAddress))
+				rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefixFromAddress(validator.RewardAddress))
 				if err != nil {
 					s.logger.Error(errors.WithStack(err))
 					continue
 				}
-				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(validator.OwnerAddress))
+				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefixFromAddress(validator.OwnerAddress))
 				if err != nil {
 					s.logger.Error(errors.WithStack(err))
 					continue
@@ -155,10 +155,10 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 		// Collect all PubKey's and addresses for save it before
 		for i, vlr := range resp.Result {
 			validators[i] = &models.Validator{PublicKey: helpers.RemovePrefix(vlr.PubKey)}
-			addressesMap[helpers.RemovePrefix(vlr.RewardAddress)] = struct{}{}
-			addressesMap[helpers.RemovePrefix(vlr.OwnerAddress)] = struct{}{}
+			addressesMap[helpers.RemovePrefixFromAddress(vlr.RewardAddress)] = struct{}{}
+			addressesMap[helpers.RemovePrefixFromAddress(vlr.OwnerAddress)] = struct{}{}
 			for _, stake := range vlr.Stakes {
-				addressesMap[helpers.RemovePrefix(stake.Owner)] = struct{}{}
+				addressesMap[helpers.RemovePrefixFromAddress(stake.Owner)] = struct{}{}
 			}
 		}
 
@@ -180,7 +180,7 @@ func (s *Service) UpdateStakesWorker(jobs <-chan uint64) {
 			}
 			validatorIds[i] = id
 			for _, stake := range vlr.Stakes {
-				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(stake.Owner))
+				ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefixFromAddress(stake.Owner))
 				if err != nil {
 					s.logger.Error(errors.WithStack(err))
 					continue
@@ -255,13 +255,13 @@ func (s *Service) HandleCandidateResponse(response *responses.CandidateResponse)
 		return nil, nil, err
 	}
 	validator.CreatedAtBlockID = &createdAtBlockID
-	ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(response.Result.OwnerAddress))
+	ownerAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefixFromAddress(response.Result.OwnerAddress))
 	if err != nil {
 		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
 	}
 	validator.OwnerAddressID = &ownerAddressID
-	rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefix(response.Result.RewardAddress))
+	rewardAddressID, err := s.addressRepository.FindIdOrCreate(helpers.RemovePrefixFromAddress(response.Result.RewardAddress))
 	if err != nil {
 		s.logger.Error(errors.WithStack(err))
 		return nil, nil, err
@@ -294,7 +294,7 @@ func (s *Service) GetStakesFromCandidateResponse(response *responses.CandidateRe
 		return nil, err
 	}
 	for _, stake := range response.Result.Stakes {
-		ownerAddressID, err := s.addressRepository.FindId(helpers.RemovePrefix(stake.Owner))
+		ownerAddressID, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(stake.Owner))
 		if err != nil {
 			s.logger.Error(errors.WithStack(err))
 			return nil, err

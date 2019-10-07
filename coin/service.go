@@ -88,7 +88,7 @@ func (s *Service) ExtractFromTx(tx responses.Transaction) (*models.Coin, error) 
 		DeletedAt:      nil,
 	}
 
-	fromId, err := s.addressRepository.FindId(helpers.RemovePrefix(tx.From))
+	fromId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(tx.From))
 	if err != nil {
 		s.logger.Error(err)
 	} else {

@@ -55,13 +55,13 @@ func (s *Service) ExtractAddressesFromTransactions(transactions []responses.Tran
 			s.logger.Error("empty transaction data")
 			return nil, errors.New("empty transaction data"), nil
 		}
-		mapAddresses[helpers.RemovePrefix(tx.From)] = struct{}{}
+		mapAddresses[helpers.RemovePrefixFromAddress(tx.From)] = struct{}{}
 		if tx.Type == models.TxTypeSend {
-			mapAddresses[helpers.RemovePrefix(tx.IData.(models.SendTxData).To)] = struct{}{}
+			mapAddresses[helpers.RemovePrefixFromAddress(tx.IData.(models.SendTxData).To)] = struct{}{}
 		}
 		if tx.Type == models.TxTypeMultiSend {
 			for _, receiver := range tx.IData.(models.MultiSendTxData).List {
-				mapAddresses[helpers.RemovePrefix(receiver.To)] = struct{}{}
+				mapAddresses[helpers.RemovePrefixFromAddress(receiver.To)] = struct{}{}
 			}
 		}
 		if tx.Type == models.TxTypeRedeemCheck {
@@ -86,7 +86,7 @@ func (s *Service) ExtractAddressesFromTransactions(transactions []responses.Tran
 				}).Error(err)
 				continue
 			}
-			mapAddresses[helpers.RemovePrefix(sender.String())] = struct{}{}
+			mapAddresses[helpers.RemovePrefixFromAddress(sender.String())] = struct{}{}
 		}
 	}
 	addresses := addressesMapToSlice(mapAddresses)
@@ -99,8 +99,8 @@ func (s *Service) ExtractAddressesEventsResponse(response *responses.EventsRespo
 
 		addressesHash := event.Value.Address
 
-		if len(addressesHash) > 2 {
-			addressesHash = helpers.RemovePrefix(addressesHash)
+		if len(addressesHash) > 5 {
+			addressesHash = helpers.RemovePrefixFromAddress(addressesHash)
 			mapAddresses[addressesHash] = struct{}{}
 		}
 	}

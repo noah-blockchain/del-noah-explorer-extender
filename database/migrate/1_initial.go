@@ -211,7 +211,7 @@ comment on column public.transactions.created_at is 'Timestamp of tx = timestamp
 
 comment on column public.transactions.type is 'Integer index of tx type';
 
-comment on column public.transactions.hash is 'Tx hash 64 symbols hex string without prefix(Mt****). Because of key-value-only filtering uses hash index';
+comment on column public.transactions.hash is 'Tx hash 64 symbols hex string without prefix(Nt****). Because of key-value-only filtering uses hash index';
 
 comment on column public.transactions.payload is 'transaction payload in bytes';
 

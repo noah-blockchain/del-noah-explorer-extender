@@ -77,7 +77,7 @@ func (s *Service) HandleEventResponse(blockHeight uint64, response *responses.Ev
 			continue
 		}
 
-		addressId, err := s.addressRepository.FindId(helpers.RemovePrefix(event.Value.Address))
+		addressId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(event.Value.Address))
 		if err != nil {
 			s.logger.WithFields(logrus.Fields{
 				"address": event.Value.Address,

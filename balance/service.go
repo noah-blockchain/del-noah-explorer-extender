@@ -128,7 +128,7 @@ func (s *Service) HandleBalanceResponse(response *responses.BalancesResponse) ([
 	}
 
 	for _, item := range response.Result {
-		addressId, err := s.addressRepository.FindId(helpers.RemovePrefix(item.Address))
+		addressId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(item.Address))
 		if err != nil {
 			s.logger.WithFields(logrus.Fields{"address": item.Address}).Error(err)
 			return nil, err

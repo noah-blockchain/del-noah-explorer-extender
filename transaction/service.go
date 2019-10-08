@@ -196,7 +196,7 @@ func (s *Service) SaveAllTxOutputs(txList []*models.Transaction) error {
 				return errors.New("empty receiver of transaction")
 			}
 
-			toId, err := s.addressRepository.FindId(helpers.RemovePrefix(tx.IData.(models.SendTxData).To))
+			toId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(tx.IData.(models.SendTxData).To))
 			helpers.HandleError(err)
 			coinID, err := s.coinRepository.FindIdBySymbol(tx.IData.(models.SendTxData).Coin)
 			helpers.HandleError(err)
@@ -209,7 +209,7 @@ func (s *Service) SaveAllTxOutputs(txList []*models.Transaction) error {
 		}
 		if tx.Type == models.TxTypeMultiSend {
 			for _, receiver := range tx.IData.(models.MultiSendTxData).List {
-				toId, err := s.addressRepository.FindId(helpers.RemovePrefix(receiver.To))
+				toId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(receiver.To))
 				helpers.HandleError(err)
 				coinID, err := s.coinRepository.FindIdBySymbol(receiver.Coin)
 				helpers.HandleError(err)
@@ -246,7 +246,7 @@ func (s *Service) SaveAllTxOutputs(txList []*models.Transaction) error {
 
 			// We are put a creator of a check into "to" field
 			// because "from" field use for a person who created a transaction
-			toId, err := s.addressRepository.FindId(helpers.RemovePrefix(sender.String()))
+			toId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(sender.String()))
 			helpers.HandleError(err)
 			coinID, err := s.coinRepository.FindIdBySymbol(data.Coin.String())
 			helpers.HandleError(err)
@@ -273,7 +273,7 @@ func (s *Service) SaveAllTxOutputs(txList []*models.Transaction) error {
 }
 
 func (s *Service) handleValidTransaction(tx responses.Transaction, blockHeight uint64, blockCreatedAt time.Time) (*models.Transaction, error) {
-	fromId, err := s.addressRepository.FindId(helpers.RemovePrefix(tx.From))
+	fromId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(tx.From))
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func (s *Service) handleValidTransaction(tx responses.Transaction, blockHeight u
 }
 
 func (s *Service) handleInvalidTransaction(tx responses.Transaction, blockHeight uint64, blockCreatedAt time.Time) (*models.InvalidTransaction, error) {
-	fromId, err := s.addressRepository.FindId(helpers.RemovePrefix(tx.From))
+	fromId, err := s.addressRepository.FindId(helpers.RemovePrefixFromAddress(tx.From))
 	if err != nil {
 		return nil, err
 	}

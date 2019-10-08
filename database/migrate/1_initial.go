@@ -479,6 +479,8 @@ create index if not exists index_transaction_by_address_block_id_address_id_inde
 
 create index if not exists index_transaction_by_address_transaction_id_index
     on public.index_transaction_by_address (transaction_id);
+
+INSERT INTO public.coins (symbol) VALUES ('NOAH');
 `
 
 func init() {

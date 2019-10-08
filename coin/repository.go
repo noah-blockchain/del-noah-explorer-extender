@@ -1,9 +1,10 @@
 package coin
 
 import (
+	"sync"
+
 	"github.com/go-pg/pg"
 	"github.com/noah-blockchain/noah-explorer-tools/models"
-	"sync"
 )
 
 type Repository struct {

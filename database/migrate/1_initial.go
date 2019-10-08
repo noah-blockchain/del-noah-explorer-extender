@@ -266,17 +266,22 @@ create index if not exists transactions_hash_index
 
 create table if not exists public.validators
 (
-    id                  serial                                 not null
+    id                       serial                                 not null
         constraint validator_public_keys_pkey
             primary key,
-    reward_address_id   bigint,
-    owner_address_id    bigint,
-    created_at_block_id integer,
-    status              integer,
-    commission          integer,
-    total_stake         numeric(70),
-    public_key          varchar(70)                            not null,
-    update_at           timestamp with time zone default now() not null
+    reward_address_id        bigint,
+    owner_address_id         bigint,
+    created_at_block_id      integer,
+    status                   integer,
+    commission               integer,
+    total_stake              numeric(70),
+    public_key               varchar(70)                            not null,
+    update_at                timestamp with time zone default now() not null,
+    name                     varchar(64),
+    site_url                 varchar(100),
+    icon_url                 varchar(100),
+    description              text,
+    meta_updated_at_block_id integer
 );
 
 comment on table public.validators is 'ATTENTION - only public _ey is not null field, other fields can be null';
@@ -479,6 +484,8 @@ create index if not exists index_transaction_by_address_block_id_address_id_inde
 
 create index if not exists index_transaction_by_address_transaction_id_index
     on public.index_transaction_by_address (transaction_id);
+
+INSERT INTO public.coins (symbol) VALUES ('NOAH');
 `
 
 func init() {

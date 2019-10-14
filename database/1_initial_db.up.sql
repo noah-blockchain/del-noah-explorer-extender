@@ -1,273 +1,601 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.5.14
+-- Dumped by pg_dump version 9.5.14
 create schema if not exists public;
 
-DROP TYPE IF EXISTS public.rewards_role;
-create type public.rewards_role as enum ('Validator', 'Delegator', 'DAO', 'Developers');
-alter type public.rewards_role owner to noah;
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
 
-create table if not exists public.addresses
+SELECT set_config('search_path', '', false);
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+--
+-- Name: rewards_role; Type: TYPE; Schema: public; Owner: noah
+--
+DROP TYPE IF EXISTS public.rewards_role;
+
+CREATE TYPE public.rewards_role AS ENUM (
+    'Validator',
+    'Delegator',
+    'DAO',
+    'Developers'
+    );
+
+
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: addresses; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.addresses
 (
-    id                  bigserial   not null
-        constraint addresses_pkey
-            primary key,
-    address             varchar(64) not null,
+    id                  bigint                NOT NULL,
+    address             character varying(40) NOT NULL,
     updated_at          timestamp with time zone,
     updated_at_block_id bigint
 );
 
-comment on column public.addresses.address is 'Address hex string without prefix(NOAHx****)';
 
-comment on column public.addresses.updated_at is 'Last balance parsing time';
 
-comment on column public.addresses.updated_at_block_id is 'Block id, that have transactions or events, that triggers address record to update from api-method GET /address';
+--
+-- Name: COLUMN addresses.address; Type: COMMENT; Schema: public; Owner: noah
+--
 
-alter table public.addresses
-    owner to noah;
+COMMENT ON COLUMN public.addresses.address IS 'Address hex string without prefix(NOAHx****)';
 
-create unique index if not exists addresses_address_uindex
-    on public.addresses (address);
 
-create table if not exists public.blocks
+--
+-- Name: COLUMN addresses.updated_at; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.addresses.updated_at IS 'Last balance parsing time';
+
+--
+-- Name: COLUMN addresses.updated_at_block_id; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.addresses.updated_at_block_id IS 'Block id, that have transactions or events, that triggers address record to update from api-method GET /address';
+
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
+
+
+--
+-- Name: balances; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.balances
 (
-    id                    integer                                not null
-        constraint blocks_pkey
-            primary key,
-    total_txs             bigint                   default 0     not null,
-    size                  bigint                                 not null,
-    proposer_validator_id integer                                not null,
-    num_txs               integer                  default 0     not null,
-    block_time            bigint                                 not null,
-    created_at            timestamp with time zone               not null,
-    updated_at            timestamp with time zone default now() not null,
-    block_reward          numeric(70)                            not null,
-    hash                  varchar(64)                            not null
+    id         bigint         NOT NULL,
+    address_id bigint         NOT NULL,
+    coin_id    integer        NOT NULL,
+    value      numeric(70, 0) NOT NULL
 );
 
-comment on table public.blocks is 'Address entity table';
 
-comment on column public.blocks.total_txs is 'Total count of txs in blockchain';
 
-comment on column public.blocks.proposer_validator_id is 'Proposer public key (Np***)';
+--
+-- Name: balances_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
 
-comment on column public.blocks.num_txs is 'Count of txs in block';
+CREATE SEQUENCE public.balances_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
-comment on column public.blocks.block_time is 'Block operation time (???) in microseconds';
 
-comment on column public.blocks.created_at is 'Datetime of block creation("time" field from api)';
 
-comment on column public.blocks.updated_at is 'Time of record last update';
+--
+-- Name: balances_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
 
-comment on column public.blocks.block_reward is 'Sum of all block rewards';
+ALTER SEQUENCE public.balances_id_seq OWNED BY public.balances.id;
 
-comment on column public.blocks.hash is 'Hex string';
 
-alter table public.blocks
-    owner to noah;
+--
+-- Name: block_validator; Type: TABLE; Schema: public; Owner: noah
+--
 
-create index if not exists blocks_proposer_validator_id_index
-    on public.blocks (proposer_validator_id);
-
-create index if not exists blocks_created_at_index
-    on public.blocks (created_at desc);
-
-create table if not exists public.coins
+CREATE TABLE public.block_validator
 (
-    id                      serial                                 not null
-        constraint coins_pkey
-            primary key,
-    creation_address_id     bigint
-        constraint coins_addresses_id_fk
-            references public.addresses,
+    block_id     bigint                NOT NULL,
+    validator_id integer               NOT NULL,
+    signed       boolean DEFAULT false NOT NULL
+);
+
+
+
+--
+-- Name: blocks; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.blocks
+(
+    id                    integer                  NOT NULL,
+    total_txs             bigint                   NOT NULL DEFAULT 0,
+    size                  bigint                   NOT NULL,
+    proposer_validator_id integer                  NOT NULL,
+    num_txs               integer                  NOT NULL DEFAULT 0,
+    block_time            bigint                   NOT NULL,
+    created_at            timestamp with time zone NOT NULL,
+    updated_at            timestamp with time zone          DEFAULT now() NOT NULL,
+    block_reward          numeric(70, 0)           NOT NULL,
+    hash                  character varying(64)    NOT NULL
+);
+
+
+
+--
+-- Name: TABLE blocks; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON TABLE public.blocks IS 'Address entity table';
+
+
+--
+-- Name: COLUMN blocks.total_txs; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.total_txs IS 'Total count of txs in blockchain';
+
+
+--
+-- Name: COLUMN blocks.proposer_validator_id; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.proposer_validator_id IS 'Proposer public key (Mp***)';
+
+
+--
+-- Name: COLUMN blocks.num_txs; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.num_txs IS 'Count of txs in block';
+
+
+--
+-- Name: COLUMN blocks.block_time; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.block_time IS 'Block operation time (???) in microseconds';
+
+
+--
+-- Name: COLUMN blocks.created_at; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.created_at IS 'Datetime of block creation("time" field from api)';
+
+
+--
+-- Name: COLUMN blocks.updated_at; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.updated_at IS 'Time of record last update';
+
+
+--
+-- Name: COLUMN blocks.block_reward; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.block_reward IS 'Sum of all block rewards';
+
+
+--
+-- Name: COLUMN blocks.hash; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.blocks.hash IS 'Hex string';
+
+
+--
+-- Name: coins; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.coins
+(
+    id                      integer                                NOT NULL,
+    creation_address_id     bigint,
     creation_transaction_id bigint,
     crr                     integer,
-    volume                  numeric(70),
-    reserve_balance         numeric(70),
-    name                    varchar(255),
-    symbol                  varchar(20)                            not null,
-    updated_at              timestamp with time zone default now() not null,
-    deleted_at              timestamp with time zone
+    volume                  numeric(70, 0),
+    reserve_balance         numeric(70, 0),
+    name                    character varying(255),
+    symbol                  character varying(20)                  NOT NULL,
+    updated_at              timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at              timestamp with time zone               NULL
 );
 
-comment on column public.coins.creation_address_id is 'Id of creator address in address table';
 
-comment on column public.coins.reserve_balance is 'Reservation balance for coin creation
+
+--
+-- Name: COLUMN coins.creation_address_id; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.coins.creation_address_id IS 'Id of creator address in address table';
+
+
+--
+-- Name: COLUMN coins.updated_at; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.coins.updated_at IS 'Timestamp of coin balance/value updation(from api for example)';
+
+
+--
+-- Name: COLUMN coins.reserve_balance; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.coins.reserve_balance IS 'Reservation balance for coin creation
 ';
 
-comment on column public.coins.name is 'Name of coin';
 
-comment on column public.coins.symbol is 'Short symbol of coin';
+--
+-- Name: COLUMN coins.name; Type: COMMENT; Schema: public; Owner: noah
+--
 
-comment on column public.coins.updated_at is 'Timestamp of coin balance/value updation(from api for example)';
+COMMENT ON COLUMN public.coins.name IS 'Name of coin';
 
-alter table public.coins
-    owner to noah;
 
-create table if not exists public.balances
+--
+-- Name: COLUMN coins.symbol; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.coins.symbol IS 'Short symbol of coin';
+
+
+--
+-- Name: coins_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.coins_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: coins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.coins_id_seq OWNED BY public.coins.id;
+
+
+--
+-- Name: invalid_transactions; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.invalid_transactions
 (
-    id         bigserial   not null
-        constraint balances_pkey
-            primary key,
-    address_id bigint      not null
-        constraint balances_addresses_id_fk
-            references public.addresses,
-    coin_id    integer     not null
-        constraint balances_coins_id_fk
-            references public.coins,
-    value      numeric(70) not null
+    id              bigint                   NOT NULL,
+    from_address_id bigint                   NOT NULL,
+    block_id        integer                  NOT NULL,
+    created_at      timestamp with time zone NOT NULL,
+    type            smallint                 NOT NULL,
+    hash            character varying(64)    NOT NULL,
+    tx_data         jsonb                    NOT NULL
 );
 
-alter table public.balances
-    owner to noah;
 
-create unique index if not exists balances_address_id_coind_id_uindex
-    on public.balances (address_id, coin_id);
 
-create index if not exists balances_address_id_index
-    on public.balances (address_id);
+--
+-- Name: COLUMN invalid_transactions.created_at; Type: COMMENT; Schema: public; Owner: noah
+--
 
-create index if not exists balances_coind_id_index
-    on public.balances (coin_id);
+COMMENT ON COLUMN public.invalid_transactions.created_at IS 'Duplicate of block created_at for less joins listings';
 
-create unique index if not exists coins_creation_transaction_id_uindex
-    on public.coins (creation_transaction_id);
 
-create index if not exists coins_creator_address_id_index
-    on public.coins (creation_address_id);
+--
+-- Name: invalid_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
 
-create unique index if not exists coins_symbol_uindex
-    on public.coins (symbol);
+CREATE SEQUENCE public.invalid_transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
-create table if not exists public.invalid_transactions
+
+
+--
+-- Name: invalid_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.invalid_transactions_id_seq OWNED BY public.invalid_transactions.id;
+
+
+--
+-- Name: rewards; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.rewards
 (
-    id              bigserial                not null
-        constraint invalid_transactions_pkey
-            primary key,
-    from_address_id bigint                   not null
-        constraint invalid_transactions_addresses_id_fk
-            references public.addresses,
-    block_id        integer                  not null
-        constraint invalid_transactions_blocks_id_fk
-            references public.blocks,
-    created_at      timestamp with time zone not null,
-    type            smallint                 not null,
-    hash            varchar(64)              not null,
-    tx_data         jsonb                    not null
+    address_id   bigint              NOT NULL,
+    block_id     integer             NOT NULL,
+    validator_id integer             NOT NULL,
+    role         public.rewards_role NOT NULL,
+    amount       numeric(70, 0)      NOT NULL
 );
 
-comment on column public.invalid_transactions.created_at is 'Duplicate of block created_at for less joins listings';
 
-alter table public.invalid_transactions
-    owner to noah;
 
-create index if not exists invalid_transactions_block_id_from_address_id_index
-    on public.invalid_transactions (block_id desc, from_address_id asc);
+--
+-- Name: aggregated_rewards; Type: TABLE; Schema: public; Owner: noah
+--
 
-create index if not exists invalid_transactions_from_address_id_index
-    on public.invalid_transactions (from_address_id);
-
-create index if not exists invalid_transactions_hash_index
-    on public.invalid_transactions (hash);
-
-create table if not exists public.transactions
+CREATE TABLE public.aggregated_rewards
 (
-    id              bigserial                not null
-        constraint transactions_pkey
-            primary key,
-    from_address_id bigint                   not null
-        constraint transactions_addresses_id_fk
-            references public.addresses,
-    nonce           bigint                   not null,
-    gas_price       bigint                   not null,
-    gas             bigint                   not null,
-    block_id        integer                  not null
-        constraint transactions_blocks_id_fk
-            references public.blocks,
-    gas_coin_id     integer                  not null
-        constraint transactions_coins_id_fk
-            references public.coins,
-    created_at      timestamp with time zone not null,
-    type            smallint                 not null,
-    hash            varchar(64)              not null,
+    time_id       timestamp with time zone NOT NULL,
+    to_block_id   integer                  NOT NULL,
+    from_block_id integer                  NOT NULL,
+    address_id    bigint                   NOT NULL,
+    validator_id  integer                  NOT NULL,
+    role          public.rewards_role      NOT NULL,
+    amount        numeric(70, 0)           NOT NULL
+);
+
+
+
+--
+-- Name: slashes; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.slashes
+(
+    id           bigint         NOT NULL,
+    address_id   bigint         NOT NULL,
+    block_id     integer        NOT NULL,
+    validator_id integer        NOT NULL,
+    coin_id      integer        NOT NULL,
+    amount       numeric(70, 0) NOT NULL
+);
+
+
+
+--
+-- Name: slashes_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.slashes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: slashes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.slashes_id_seq OWNED BY public.slashes.id;
+
+
+--
+-- Name: stakes; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.stakes
+(
+    id               serial         NOT NULL,
+    owner_address_id bigint         NOT NULL,
+    validator_id     integer        NOT NULL,
+    coin_id          integer        NOT NULL,
+    value            numeric(70, 0) NOT NULL,
+    noah_value       numeric(70, 0) NOT NULL
+);
+
+--
+-- Name: transaction_outputs; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.transaction_outputs
+(
+    id             bigint         NOT NULL,
+    transaction_id bigint         NOT NULL,
+    to_address_id  bigint         NOT NULL,
+    coin_id        integer        NOT NULL,
+    value          numeric(70, 0) NOT NULL
+);
+
+
+
+--
+-- Name: COLUMN transaction_outputs.value; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.transaction_outputs.value IS 'Value of tx output';
+
+
+--
+-- Name: transaction_outputs_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.transaction_outputs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: transaction_outputs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.transaction_outputs_id_seq OWNED BY public.transaction_outputs.id;
+
+
+--
+-- Name: transaction_validator; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.transaction_validator
+(
+    transaction_id bigint  NOT NULL,
+    validator_id   integer NOT NULL
+);
+
+
+
+--
+-- Name: transactions; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.transactions
+(
+    id              bigint                   NOT NULL,
+    from_address_id bigint                   NOT NULL,
+    nonce           bigint                   NOT NULL,
+    gas_price       bigint                   NOT NULL,
+    gas             bigint                   NOT NULL,
+    block_id        integer                  NOT NULL,
+    gas_coin_id     integer                  NOT NULL,
+    created_at      timestamp with time zone NOT NULL,
+    type            smallint                 NOT NULL,
+    hash            character varying(64)    NOT NULL,
     service_data    text,
-    data            jsonb                    not null,
-    tags            jsonb                    not null,
+    data            jsonb                    NOT NULL,
+    tags            jsonb                    NOT NULL,
     payload         bytea,
-    raw_tx          bytea                    not null
+    raw_tx          bytea                    NOT NULL
 );
 
-comment on column public.transactions.from_address_id is 'Link to address, from that tx was signed';
 
-comment on column public.transactions.block_id is 'Link to block';
 
-comment on column public.transactions.created_at is 'Timestamp of tx = timestamp of block. Duplicate data for less joins on blocks';
+--
+-- Name: COLUMN transactions.from_address_id; Type: COMMENT; Schema: public; Owner: noah
+--
 
-comment on column public.transactions.type is 'Integer index of tx type';
+COMMENT ON COLUMN public.transactions.from_address_id IS 'Link to address, from that tx was signed';
 
-comment on column public.transactions.hash is 'Tx hash 64 symbols hex string without prefix(Nt****). Because of key-value-only filtering uses hash index';
 
-comment on column public.transactions.payload is 'transaction payload in bytes';
+--
+-- Name: COLUMN transactions.block_id; Type: COMMENT; Schema: public; Owner: noah
+--
 
-comment on column public.transactions.raw_tx is 'Raw tx data in bytes';
+COMMENT ON COLUMN public.transactions.block_id IS 'Link to block';
 
-alter table public.transactions
-    owner to noah;
 
-alter table public.coins
-    add constraint coins_transactions_id_fk
-        foreign key (creation_transaction_id) references public.transactions;
+--
+-- Name: COLUMN transactions.created_at; Type: COMMENT; Schema: public; Owner: noah
+--
 
-create table if not exists public.transaction_outputs
+COMMENT ON COLUMN public.transactions.created_at IS 'Timestamp of tx = timestamp of block. Duplicate data for less joins on blocks';
+
+
+--
+-- Name: COLUMN transactions.type; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.transactions.type IS 'Integer index of tx type';
+
+--
+-- Name: COLUMN transactions.hash; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.transactions.hash IS 'Tx hash 64 symbols hex string without prefix(Nt****). Because of key-value-only filtering uses hash index';
+
+
+--
+-- Name: COLUMN transactions.payload; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.transactions.payload IS 'transaction payload in bytes';
+
+
+--
+-- Name: COLUMN transactions.raw_tx; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON COLUMN public.transactions.raw_tx IS 'Raw tx data in bytes';
+
+
+--
+-- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
+
+
+--
+-- Name: validators; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.validators
 (
-    id             bigserial   not null
-        constraint transaction_outputs_pkey
-            primary key,
-    transaction_id bigint      not null
-        constraint transaction_outputs_transactions_id_fk
-            references public.transactions,
-    to_address_id  bigint      not null
-        constraint transaction_outputs_addresses_id_fk
-            references public.addresses,
-    coin_id        integer     not null
-        constraint transaction_outputs_coins_id_fk
-            references public.coins,
-    value          numeric(70) not null
-);
-
-comment on column public.transaction_outputs.value is 'Value of tx output';
-
-alter table public.transaction_outputs
-    owner to noah;
-
-create index if not exists transaction_outputs_coin_id_index
-    on public.transaction_outputs (coin_id);
-
-create index if not exists transaction_outputs_transaction_id_index
-    on public.transaction_outputs (transaction_id);
-
-create index if not exists transaction_outputs_address_id_index
-    on public.transaction_outputs (to_address_id);
-
-create index if not exists transactions_block_id_from_address_id_index
-    on public.transactions (block_id desc, from_address_id asc);
-
-create index if not exists transactions_from_address_id_index
-    on public.transactions (from_address_id);
-
-create index if not exists transactions_hash_index
-    on public.transactions (hash);
-
-create table if not exists public.validators
-(
-    id                       serial                                 not null
-        constraint validator_public_keys_pkey
-            primary key,
+    id                       integer                                NOT NULL,
     reward_address_id        bigint,
     owner_address_id         bigint,
     created_at_block_id      integer,
     status                   integer,
     commission               integer,
-    total_stake              numeric(70),
-    public_key               varchar(70)                            not null,
-    update_at                timestamp with time zone default now() not null,
+    total_stake              numeric(70, 0),
+    public_key               character varying(64)                  NOT NULL,
+    update_at                timestamp with time zone DEFAULT now() NOT NULL,
     name                     varchar(64),
     site_url                 varchar(100),
     icon_url                 varchar(100),
@@ -275,207 +603,919 @@ create table if not exists public.validators
     meta_updated_at_block_id integer
 );
 
-comment on table public.validators is 'ATTENTION - only public _ey is not null field, other fields can be null';
 
-alter table public.validators
-    owner to noah;
 
-create table if not exists public.block_validator
+--
+-- Name: TABLE validators; Type: COMMENT; Schema: public; Owner: noah
+--
+
+COMMENT ON TABLE public.validators IS 'ATTENTION - only public _ey is not null field, other fields can be null';
+
+
+--
+-- Name: validator_public_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: noah
+--
+
+CREATE SEQUENCE public.validator_public_keys_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+
+--
+-- Name: validator_public_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: noah
+--
+
+ALTER SEQUENCE public.validator_public_keys_id_seq OWNED BY public.validators.id;
+
+
+--
+-- Name: index_transaction_by_address; Type: TABLE; Schema: public; Owner: noah
+--
+
+CREATE TABLE public.index_transaction_by_address
 (
-    block_id     bigint                not null
-        constraint block_validator_blocks_id_fk
-            references public.blocks,
-    validator_id integer               not null
-        constraint block_validator_validators_id_fk
-            references public.validators,
-    signed       boolean default false not null,
-    constraint block_validator_pk
-        primary key (block_id, validator_id)
+    block_id       bigint NOT NULL,
+    address_id     bigint NOT NULL,
+    transaction_id bigint NOT NULL
 );
 
-alter table public.block_validator
-    owner to noah;
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-create index if not exists block_validator_block_id_index
-    on public.block_validator (block_id);
+ALTER TABLE ONLY public.addresses
+    ALTER COLUMN id SET DEFAULT nextval('public.addresses_id_seq'::regclass);
 
-create index if not exists block_validator_validator_id_index
-    on public.block_validator (validator_id);
 
-create table if not exists public.rewards
-(
-    address_id   bigint       not null
-        constraint rewards_addresses_id_fk
-            references public.addresses,
-    block_id     integer      not null
-        constraint rewards_blocks_id_fk
-            references public.blocks,
-    validator_id integer      not null
-        constraint rewards_validators_id_fk
-            references public.validators,
-    role         rewards_role not null,
-    amount       numeric(70)  not null
-);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-alter table public.rewards
-    owner to noah;
+ALTER TABLE ONLY public.balances
+    ALTER COLUMN id SET DEFAULT nextval('public.balances_id_seq'::regclass);
 
-create index if not exists rewards_address_id_index
-    on public.rewards (address_id);
 
-create index if not exists rewards_block_id_index
-    on public.rewards (block_id);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-create index if not exists rewards_validator_id_index
-    on public.rewards (validator_id);
+ALTER TABLE ONLY public.coins
+    ALTER COLUMN id SET DEFAULT nextval('public.coins_id_seq'::regclass);
 
-create table if not exists public.aggregated_rewards
-(
-    time_id       timestamp with time zone not null,
-    to_block_id   integer                  not null
-        constraint aggregated_rewards_to_blocks_id_fk
-            references public.blocks,
-    from_block_id integer                  not null
-        constraint aggregated_rewards_from_blocks_id_fk
-            references public.blocks,
-    address_id    bigint                   not null
-        constraint aggregated_rewards_addresses_id_fk
-            references public.addresses,
-    validator_id  integer                  not null
-        constraint aggregated_rewards_validators_id_fk
-            references public.validators,
-    role          rewards_role             not null,
-    amount        numeric(70)              not null
-);
 
-alter table public.aggregated_rewards
-    owner to noah;
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-create index if not exists aggregated_rewards_address_id_index
-    on public.aggregated_rewards (address_id);
+ALTER TABLE ONLY public.invalid_transactions
+    ALTER COLUMN id SET DEFAULT nextval('public.invalid_transactions_id_seq'::regclass);
 
-create index if not exists aggregated_rewards_validator_id_index
-    on public.aggregated_rewards (validator_id);
 
-create index if not exists aggregated_rewards_time_id_index
-    on public.aggregated_rewards (time_id);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-create unique index if not exists aggregated_rewards_unique_index
-    on public.aggregated_rewards (time_id, address_id, validator_id, role);
+ALTER TABLE ONLY public.slashes
+    ALTER COLUMN id SET DEFAULT nextval('public.slashes_id_seq'::regclass);
 
-create table if not exists public.slashes
-(
-    id           bigserial   not null
-        constraint slashes_pkey
-            primary key,
-    address_id   bigint      not null
-        constraint slashes_addresses_id_fk
-            references public.addresses,
-    block_id     integer     not null
-        constraint slashes_blocks_id_fk
-            references public.blocks,
-    validator_id integer     not null
-        constraint slashes_validators_id_fk
-            references public.validators,
-    coin_id      integer     not null
-        constraint slashes_coins_id_fk
-            references public.coins,
-    amount       numeric(70) not null
-);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-alter table public.slashes
-    owner to noah;
+ALTER TABLE ONLY public.transaction_outputs
+    ALTER COLUMN id SET DEFAULT nextval('public.transaction_outputs_id_seq'::regclass);
 
-create index if not exists slashes_address_id_index
-    on public.slashes (address_id);
 
-create index if not exists slashes_block_id_index
-    on public.slashes (block_id);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-create index if not exists slashes_coin_id_index
-    on public.slashes (coin_id);
+ALTER TABLE ONLY public.transactions
+    ALTER COLUMN id SET DEFAULT nextval('public.transactions_id_seq'::regclass);
 
-create index if not exists slashes_validator_id_index
-    on public.slashes (validator_id);
 
-create table if not exists public.stakes
-(
-    id               serial      not null,
-    owner_address_id bigint      not null
-        constraint stakes_addresses_id_fk
-            references public.addresses,
-    validator_id     integer     not null
-        constraint stakes_validators_id_fk
-            references public.validators,
-    coin_id          integer     not null
-        constraint stakes_coins_id_fk
-            references public.coins,
-    value            numeric(70) not null,
-    noah_value       numeric(70) not null,
-    constraint stakes_pkey
-        primary key (validator_id, owner_address_id, coin_id)
-);
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: noah
+--
 
-alter table public.stakes
-    owner to noah;
+ALTER TABLE ONLY public.validators
+    ALTER COLUMN id SET DEFAULT nextval('public.validator_public_keys_id_seq'::regclass);
 
-create index if not exists stakes_coin_id_index
-    on public.stakes (coin_id);
 
-create index if not exists stakes_owner_address_id_index
-    on public.stakes (owner_address_id);
+--
+-- Data for Name: addresses; Type: TABLE DATA; Schema: public; Owner: noah
+--
 
-create index if not exists stakes_validator_id_index
-    on public.stakes (validator_id);
+-- COPY public.addresses (id, address, updated_at) FROM stdin;
+-- \.
 
-create table if not exists public.transaction_validator
-(
-    transaction_id bigint  not null
-        constraint transaction_validator_transactions_id_fk
-            references public.transactions,
-    validator_id   integer not null
-        constraint transaction_validator_validators_id_fk
-            references public.validators,
-    constraint transaction_validator_pk
-        primary key (transaction_id, validator_id)
-);
 
-alter table public.transaction_validator
-    owner to noah;
+--
+-- Name: addresses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
 
-create index if not exists transaction_validator_validator_id_index
-    on public.transaction_validator (validator_id);
+SELECT setval('public.addresses_id_seq', 1, false);
 
-create unique index if not exists validator_public_keys_public_key_uindex
-    on public.validators (public_key);
 
-create table if not exists public.index_transaction_by_address
-(
-    block_id       bigint not null
-        constraint index_transaction_by_address_blocks_id_fk
-            references public.blocks,
-    address_id     bigint not null
-        constraint index_transaction_by_address_addresses_id_fk
-            references public.addresses,
-    transaction_id bigint not null
-        constraint index_transaction_by_address_transactions_id_fk
-            references public.transactions,
-    constraint index_transaction_by_address_pk
-        primary key (block_id, address_id, transaction_id)
-);
+--
+-- Data for Name: balances; Type: TABLE DATA; Schema: public; Owner: noah
+--
 
-alter table public.index_transaction_by_address
-    owner to noah;
+-- COPY public.balances (id, address_id, coin_id, value) FROM stdin;
+-- \.
 
-create index if not exists index_transaction_by_address_address_id_index
-    on public.index_transaction_by_address (address_id);
 
-create index if not exists index_transaction_by_address_block_id_address_id_index
-    on public.index_transaction_by_address (block_id, address_id);
+--
+-- Name: balances_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
 
-create index if not exists index_transaction_by_address_transaction_id_index
-    on public.index_transaction_by_address (transaction_id);
+SELECT setval('public.balances_id_seq', 1, false);
 
+
+--
+-- Data for Name: block_validator; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.block_validator (block_id, validator_id, signed) FROM stdin;
+-- \.
+
+
+--
+-- Data for Name: blocks; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.blocks (id, total_txs, size, proposer_validator_id, num_txs, block_time, created_at, updated_at,
+--                     block_reward, hash) FROM stdin;
+-- \.
+
+
+--
+-- Data for Name: coins; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.coins (id, creation_address_id, creation_transaction_id, crr, updated_at, volume,
+--                    reserve_balance, name, symbol) FROM stdin;
+-- \.
+
+--
+-- Name: coins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.coins_id_seq', 1, false);
+
+
+--
+-- Data for Name: invalid_transactions; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.invalid_transactions (id, from_address_id, block_id, created_at, type, hash, tx_data) FROM stdin;
+-- \.
+
+
+--
+-- Name: invalid_transactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.invalid_transactions_id_seq', 1, false);
+
+
+--
+-- Data for Name: rewards; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.rewards (address_id, block_id, validator_id, role, amount) FROM stdin;
+-- \.
+
+
+--
+-- Data for Name: slashes; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.slashes (id, address_id, block_id, validator_id, coin_id, amount) FROM stdin;
+-- \.
+
+
+--
+-- Name: slashes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.slashes_id_seq', 1, false);
+
+
+--
+-- Data for Name: stakes; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.stakes (owner_address_id, validator_id, coin_id, value, noah_value) FROM stdin;
+-- \.
+
+--
+-- Data for Name: transaction_outputs; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.transaction_outputs (id, transaction_id, to_address_id, coin_id, value) FROM stdin;
+-- \.
+
+
+--
+-- Name: transaction_outputs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.transaction_outputs_id_seq', 1, false);
+
+
+--
+-- Data for Name: transaction_validator; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.transaction_validator (transaction_id, validator_id) FROM stdin;
+-- \.
+
+
+--
+-- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.transactions (id, from_address_id, nonce, gas_price, gas, block_id, gas_coin_id, created_at, type, hash,
+--                           service_data, data, tags, payload, raw_tx) FROM stdin;
+-- \.
+
+
+--
+-- Name: transactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.transactions_id_seq', 1, false);
+
+
+--
+-- Name: validator_public_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: noah
+--
+
+SELECT setval('public.validator_public_keys_id_seq', 1, false);
+
+
+--
+-- Data for Name: validators; Type: TABLE DATA; Schema: public; Owner: noah
+--
+
+-- COPY public.validators (id, reward_address_id, owner_address_id, created_at_block_id, status, commission, total_stake,
+--                         public_key, update_at) FROM stdin;
+-- \.
+
+
+--
+-- Name: addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: balances_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.balances
+    ADD CONSTRAINT balances_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: block_validator_pk; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.block_validator
+    ADD CONSTRAINT block_validator_pk PRIMARY KEY (block_id, validator_id);
+
+
+--
+-- Name: blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.blocks
+    ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: coins_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.coins
+    ADD CONSTRAINT coins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: invalid_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.invalid_transactions
+    ADD CONSTRAINT invalid_transactions_pkey PRIMARY KEY (id);
+
+--
+-- Name: slashes_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.slashes
+    ADD CONSTRAINT slashes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stakes_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.stakes
+    ADD CONSTRAINT stakes_pkey PRIMARY KEY (validator_id, owner_address_id, coin_id);
+
+
+--
+-- Name: transaction_outputs_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_outputs
+    ADD CONSTRAINT transaction_outputs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transaction_validator_pk; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_validator
+    ADD CONSTRAINT transaction_validator_pk PRIMARY KEY (transaction_id, validator_id);
+
+
+--
+-- Name: transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: validator_public_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.validators
+    ADD CONSTRAINT validator_public_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_transaction_by_address index_transaction_by_address_pk; Type: CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.index_transaction_by_address
+    ADD CONSTRAINT index_transaction_by_address_pk PRIMARY KEY (block_id, address_id, transaction_id);
+
+
+--
+-- Name: addresses_address_uindex; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX addresses_address_uindex ON public.addresses USING btree (address);
+
+
+--
+-- Name: balances_address_id_coind_id_uindex; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX balances_address_id_coind_id_uindex ON public.balances USING btree (address_id, coin_id);
+
+
+--
+-- Name: balances_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX balances_address_id_index ON public.balances USING btree (address_id);
+
+
+--
+-- Name: balances_coind_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX balances_coind_id_index ON public.balances USING btree (coin_id);
+
+
+--
+-- Name: block_validator_block_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX block_validator_block_id_index ON public.block_validator USING btree (block_id);
+
+
+--
+-- Name: block_validator_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX block_validator_validator_id_index ON public.block_validator USING btree (validator_id);
+
+
+--
+-- Name: blocks_proposer_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX blocks_proposer_validator_id_index ON public.blocks USING btree (proposer_validator_id);
+
+
+--
+-- Name: blocks_proposer_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX blocks_created_at_index ON public.blocks (created_at DESC);
+
+
+--
+-- Name: coins_creation_transaction_id_uindex; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX coins_creation_transaction_id_uindex ON public.coins USING btree (creation_transaction_id);
+
+
+--
+-- Name: coins_creator_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX coins_creator_address_id_index ON public.coins USING btree (creation_address_id);
+
+--
+-- Name: coins_symbol_uindex; Type: UNIQUE INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX coins_symbol_uindex ON public.coins (symbol);
+
+
+--
+-- Name: invalid_transactions_block_id_from_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX invalid_transactions_block_id_from_address_id_index ON public.invalid_transactions USING btree (block_id DESC, from_address_id);
+
+
+--
+-- Name: invalid_transactions_from_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX invalid_transactions_from_address_id_index ON public.invalid_transactions USING btree (from_address_id);
+
+
+--
+-- Name: invalid_transactions_hash_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX invalid_transactions_hash_index ON public.invalid_transactions USING hash (hash);
+
+
+--
+-- Name: rewards_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX rewards_address_id_index ON public.rewards USING btree (address_id);
+
+
+--
+-- Name: rewards_block_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX rewards_block_id_index ON public.rewards USING btree (block_id);
+
+
+--
+-- Name: rewards_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX rewards_validator_id_index ON public.rewards USING btree (validator_id);
+
+
+--
+-- Name: aggregated_rewards_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX aggregated_rewards_address_id_index ON public.aggregated_rewards USING btree (address_id);
+
+
+
+--
+-- Name: aggregated_rewards_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX aggregated_rewards_validator_id_index ON public.aggregated_rewards USING btree (validator_id);
+
+
+
+--
+-- Name: aggregated_rewards_time_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX aggregated_rewards_time_id_index ON public.aggregated_rewards USING btree (time_id);
+
+
+
+--
+-- Name: aggregated_rewards_unique_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX aggregated_rewards_unique_index ON public.aggregated_rewards
+    USING btree (time_id, address_id, validator_id, role);
+
+
+
+--
+-- Name: slashes_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX slashes_address_id_index ON public.slashes USING btree (address_id);
+
+
+--
+-- Name: slashes_block_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX slashes_block_id_index ON public.slashes USING btree (block_id);
+
+
+--
+-- Name: slashes_coin_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX slashes_coin_id_index ON public.slashes USING btree (coin_id);
+
+
+--
+-- Name: slashes_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX slashes_validator_id_index ON public.slashes USING btree (validator_id);
+
+
+--
+-- Name: stakes_coin_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX stakes_coin_id_index ON public.stakes USING btree (coin_id);
+
+
+--
+-- Name: stakes_owner_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX stakes_owner_address_id_index ON public.stakes USING btree (owner_address_id);
+
+
+--
+-- Name: stakes_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX stakes_validator_id_index ON public.stakes USING btree (validator_id);
+
+
+--
+-- Name: transaction_outputs_coin_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transaction_outputs_coin_id_index ON public.transaction_outputs USING btree (coin_id);
+
+
+--
+-- Name: transaction_outputs_transaction_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transaction_outputs_transaction_id_index ON public.transaction_outputs USING btree (transaction_id);
+
+--
+-- Name: transaction_outputs_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transaction_outputs_address_id_index ON public.transaction_outputs USING btree (to_address_id);
+
+--
+-- Name: transaction_validator_validator_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transaction_validator_validator_id_index ON public.transaction_validator USING btree (validator_id);
+
+
+--
+-- Name: transactions_block_id_from_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transactions_block_id_from_address_id_index ON public.transactions USING btree (block_id DESC, from_address_id);
+
+
+--
+-- Name: transactions_from_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transactions_from_address_id_index ON public.transactions USING btree (from_address_id);
+
+
+--
+-- Name: transactions_hash_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX transactions_hash_index ON public.transactions USING hash (hash);
+
+
+--
+-- Name: validator_public_keys_public_key_uindex; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE UNIQUE INDEX validator_public_keys_public_key_uindex ON public.validators USING btree (public_key);
+
+
+--
+-- Name: index_transaction_by_address_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX index_transaction_by_address_address_id_index ON public.index_transaction_by_address USING btree (address_id);
+
+
+--
+-- Name: index_transaction_by_address_block_id_address_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX index_transaction_by_address_block_id_address_id_index ON public.index_transaction_by_address USING btree (block_id, address_id);
+
+
+--
+-- Name: index_transaction_by_address_transaction_id_index; Type: INDEX; Schema: public; Owner: noah
+--
+
+CREATE INDEX index_transaction_by_address_transaction_id_index ON public.index_transaction_by_address USING btree (transaction_id);
+
+
+--
+-- Name: balances_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.balances
+    ADD CONSTRAINT balances_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: balances_coins_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.balances
+    ADD CONSTRAINT balances_coins_id_fk FOREIGN KEY (coin_id) REFERENCES public.coins (id);
+
+
+--
+-- Name: block_validator_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.block_validator
+    ADD CONSTRAINT block_validator_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: block_validator_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.block_validator
+    ADD CONSTRAINT block_validator_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+--
+-- Name: coins_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.coins
+    ADD CONSTRAINT coins_addresses_id_fk FOREIGN KEY (creation_address_id) REFERENCES public.addresses (id);
+
+--
+-- Name: coins_transactions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.coins
+    ADD CONSTRAINT coins_transactions_id_fk FOREIGN KEY (creation_transaction_id) REFERENCES public.transactions (id);
+
+
+--
+-- Name: invalid_transactions_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.invalid_transactions
+    ADD CONSTRAINT invalid_transactions_addresses_id_fk FOREIGN KEY (from_address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: invalid_transactions_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.invalid_transactions
+    ADD CONSTRAINT invalid_transactions_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: rewards_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.rewards
+    ADD CONSTRAINT rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: rewards_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.rewards
+    ADD CONSTRAINT rewards_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: rewards_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.rewards
+    ADD CONSTRAINT rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+
+--
+-- Name: aggregated_rewards_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.aggregated_rewards
+    ADD CONSTRAINT aggregated_rewards_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: aggregated_rewards_from_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.aggregated_rewards
+    ADD CONSTRAINT aggregated_rewards_from_blocks_id_fk FOREIGN KEY (from_block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: aggregated_rewards_to_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.aggregated_rewards
+    ADD CONSTRAINT aggregated_rewards_to_blocks_id_fk FOREIGN KEY (to_block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: aggregated_rewards_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.aggregated_rewards
+    ADD CONSTRAINT aggregated_rewards_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+
+--
+-- Name: slashes_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.slashes
+    ADD CONSTRAINT slashes_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: slashes_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.slashes
+    ADD CONSTRAINT slashes_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: slashes_coins_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.slashes
+    ADD CONSTRAINT slashes_coins_id_fk FOREIGN KEY (coin_id) REFERENCES public.coins (id);
+
+
+--
+-- Name: slashes_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.slashes
+    ADD CONSTRAINT slashes_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+
+--
+-- Name: stakes_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.stakes
+    ADD CONSTRAINT stakes_addresses_id_fk FOREIGN KEY (owner_address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: stakes_coins_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.stakes
+    ADD CONSTRAINT stakes_coins_id_fk FOREIGN KEY (coin_id) REFERENCES public.coins (id);
+
+
+--
+-- Name: stakes_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.stakes
+    ADD CONSTRAINT stakes_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+
+--
+-- Name: transaction_outputs_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_outputs
+    ADD CONSTRAINT transaction_outputs_addresses_id_fk FOREIGN KEY (to_address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: transaction_outputs_coins_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_outputs
+    ADD CONSTRAINT transaction_outputs_coins_id_fk FOREIGN KEY (coin_id) REFERENCES public.coins (id);
+
+
+--
+-- Name: transaction_outputs_transactions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_outputs
+    ADD CONSTRAINT transaction_outputs_transactions_id_fk FOREIGN KEY (transaction_id) REFERENCES public.transactions (id);
+
+
+--
+-- Name: transaction_validator_transactions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_validator
+    ADD CONSTRAINT transaction_validator_transactions_id_fk FOREIGN KEY (transaction_id) REFERENCES public.transactions (id);
+
+
+--
+-- Name: transaction_validator_validators_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transaction_validator
+    ADD CONSTRAINT transaction_validator_validators_id_fk FOREIGN KEY (validator_id) REFERENCES public.validators (id);
+
+
+--
+-- Name: transactions_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_addresses_id_fk FOREIGN KEY (from_address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: transactions_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: transactions_coins_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_coins_id_fk FOREIGN KEY (gas_coin_id) REFERENCES public.coins (id);
+
+
+--
+-- Name: index_transaction_by_address index_transaction_by_address_addresses_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.index_transaction_by_address
+    ADD CONSTRAINT index_transaction_by_address_addresses_id_fk FOREIGN KEY (address_id) REFERENCES public.addresses (id);
+
+
+--
+-- Name: index_transaction_by_address index_transaction_by_address_blocks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.index_transaction_by_address
+    ADD CONSTRAINT index_transaction_by_address_blocks_id_fk FOREIGN KEY (block_id) REFERENCES public.blocks (id);
+
+
+--
+-- Name: index_transaction_by_address index_transaction_by_address_transactions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: noah
+--
+
+ALTER TABLE ONLY public.index_transaction_by_address
+    ADD CONSTRAINT index_transaction_by_address_transactions_id_fk FOREIGN KEY (transaction_id) REFERENCES public.transactions (id);
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: noah
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM noah;
+GRANT ALL ON SCHEMA public TO noah;
+GRANT ALL ON SCHEMA public TO PUBLIC;
 
 INSERT INTO public.coins (symbol)
 VALUES ('NOAH');

@@ -54,6 +54,11 @@ func (s *Service) GetUpdateCoinsFromCoinsMapJobChannel() chan map[string]struct{
 func (s Service) ExtractCoinsFromTransactions(transactions []responses.Transaction) ([]*models.Coin, error) {
 	var coins []*models.Coin
 	for _, tx := range transactions {
+		if tx.Log != nil { // protection. Coin maybe not created in blockchain
+			s.logger.Error(*tx.Log)
+			continue
+		}
+
 		if tx.Type == models.TxTypeCreateCoin {
 			coin, err := s.ExtractFromTx(tx)
 			if err != nil {
